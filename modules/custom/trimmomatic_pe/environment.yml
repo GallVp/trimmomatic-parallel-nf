@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::trimmomatic=0.39
+  - bioconda::seqkit=2.9.0

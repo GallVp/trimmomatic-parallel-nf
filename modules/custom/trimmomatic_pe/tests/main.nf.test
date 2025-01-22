@@ -1,0 +1,50 @@
+nextflow_process {
+
+    name "Test Process TRIMMOMATIC_PE"
+    script "../main.nf"
+    config "./nextflow_PE.config"
+    process "TRIMMOMATIC_PE"
+    
+    tag "modules"
+    tag "trimmomatic_pe"
+
+    test("Paired-Reads") {
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test', single_end:false ],
+                    [
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)
+                    ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll (
+                { assert process.success },
+                { assert path(process.out.trimmed_reads[0][1][0]).fastq.getNumberOfRecords() == 86 },
+                { assert path(process.out.trimmed_reads[0][1][1]).fastq.getNumberOfRecords() == 86 },
+                { assert snapshot(
+                    process.out.versions,
+                    [
+                        "R1",
+                        java.security.MessageDigest.getInstance("MD5").digest(
+                            path(process.out.trimmed_reads[0][1][0]).fastq.sequences.toSorted().join("\n").bytes
+                        ).collect { String.format("%02x", it) }.join(""),
+                    ],
+                    [
+                        "R2",
+                        java.security.MessageDigest.getInstance("MD5").digest(
+                            path(process.out.trimmed_reads[0][1][1]).fastq.sequences.toSorted().join("\n").bytes
+                        ).collect { String.format("%02x", it) }.join(""),
+                    ]
+                    ).match() }
+            )
+        }
+    }
+
+}

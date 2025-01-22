@@ -1,0 +1,22 @@
+{
+    "Paired-Reads": {
+        "content": [
+            [
+                "versions.yml:md5,547dad3afa9cc5f417a5a40134d5ecab"
+            ],
+            [
+                "R1",
+                "90fd3bc516b1c2b84d41fdfda2312590"
+            ],
+            [
+                "R2",
+                "ccf73b40cb0cc8fbe5a90b35d064735c"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.0",
+            "nextflow": "24.10.3"
+        },
+        "timestamp": "2025-01-23T10:09:26.92421"
+    }
+}
