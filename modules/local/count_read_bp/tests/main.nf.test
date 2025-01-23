@@ -1,0 +1,33 @@
+nextflow_process {
+
+    name "Test Process COUNT_READ_BP"
+    script "../main.nf"
+    process "COUNT_READ_BP"
+    
+    tag "modules"
+    tag "count_read_bp"
+
+    test("Paired-Reads") {
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'test', single_end:false ],
+                    [
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_1.fastq.gz', checkIfExists: true),
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/fastq/test_2.fastq.gz', checkIfExists: true)
+                    ]
+                ]
+                """
+            }
+        }
+
+        then {
+            assertAll (
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+
+}
