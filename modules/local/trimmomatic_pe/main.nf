@@ -25,7 +25,6 @@ process TRIMMOMATIC_PE {
     def seqkit_input = "-1 ${reads[0]} -2 ${reads[1]}"
     def chunk_prefixes = reads.collect { file( "$it" - '.gz' ).baseName }
     def chunk_extension = file( "${reads[0]}" - '.gz' ).extension
-    def half_cpus = (task.cpus / 2).toInteger()
     """
     mkdir chunks
     
@@ -37,6 +36,7 @@ process TRIMMOMATIC_PE {
     
     seqkit \\
         split2 \\
+        -j $task.cpus \\
         $seqkit_input \\
         -p 6 \\
         -O chunks \\
@@ -58,25 +58,13 @@ process TRIMMOMATIC_PE {
         exit 1
     fi
 
-    seqkit \\
-        scat -j $half_cpus \\
-        -f trimmed_R1 \\
-        > "${prefix}.paired.trim_1.fastq" \\
-        & \\
-    seqkit \\
-        scat -j $half_cpus \\
-        -f trimmed_R2 \\
-        > "${prefix}.paired.trim_2.fastq"
-    wait
+    cat \\
+        trimmed_R1/trimmed_R1_*.fastq.gz \\
+        > ${prefix}.paired.trim_1.fastq.gz
     
-    pigz \\
-        -p$half_cpus \\
-        "${prefix}.paired.trim_1.fastq" \\
-        & \\
-    pigz \\
-        -p$half_cpus \\
-        "${prefix}.paired.trim_2.fastq"
-    wait
+    cat \\
+        trimmed_R2/trimmed_R2_*.fastq.gz \\
+        > ${prefix}.paired.trim_2.fastq.gz
     
     cat ${prefix}_*.log \\
         > ${prefix}_out.log
