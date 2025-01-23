@@ -4,8 +4,8 @@ process TRIMMOMATIC_PE {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/82/821ce07c712e2f4e724be585aca6cec8892c3e2231cde5a8741e7f0f3c019bfc/data':
-        'community.wave.seqera.io/library/seqkit_trimmomatic:7fddf6ea9c0f349a' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/5b/5b0d3a2506b11d83b1b35f49d877985a19b50ea12033248ac2f75cc193a4598f/data':
+        'community.wave.seqera.io/library/seqkit_trimmomatic_pigz:086abd749050cbe6' }"
 
     input:
     tuple val(meta), path(reads)
@@ -25,6 +25,7 @@ process TRIMMOMATIC_PE {
     def seqkit_input = "-1 ${reads[0]} -2 ${reads[1]}"
     def chunk_prefixes = reads.collect { file( "$it" - '.gz' ).baseName }
     def chunk_extension = file( "${reads[0]}" - '.gz' ).extension
+    def half_cpus = (task.cpus / 2).toInteger()
     """
     mkdir chunks
     
@@ -52,23 +53,30 @@ process TRIMMOMATIC_PE {
     done
     wait
 
-    if [ ! \$(ls trimmed_R1) ]; then
+    if [[ ! \$(ls trimmed_R1) ]]; then
         echo "trimmomatic PE failed to produce trimmed output. See logs for details."
         exit 1
     fi
 
     seqkit \\
-        scat -j $task.cpus \\
+        scat -j $half_cpus \\
         -f trimmed_R1 \\
-        > "${prefix}.paired.trim_1.fastq"
-    
+        > "${prefix}.paired.trim_1.fastq" \\
+        & \\
     seqkit \\
-        scat -j $task.cpus \\
+        scat -j $half_cpus \\
         -f trimmed_R2 \\
         > "${prefix}.paired.trim_2.fastq"
+    wait
     
-    gzip "${prefix}.paired.trim_1.fastq"
-    gzip "${prefix}.paired.trim_2.fastq"
+    pigz \\
+        -p$half_cpus \\
+        "${prefix}.paired.trim_1.fastq" \\
+        & \\
+    pigz \\
+        -p$half_cpus \\
+        "${prefix}.paired.trim_2.fastq"
+    wait
     
     cat ${prefix}_*.log \\
         > ${prefix}_out.log

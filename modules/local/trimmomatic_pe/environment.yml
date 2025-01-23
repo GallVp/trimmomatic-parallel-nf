@@ -4,3 +4,4 @@ channels:
 dependencies:
   - bioconda::trimmomatic=0.39
   - bioconda::seqkit=2.9.0
+  - conda-forge::pigz=2.8
